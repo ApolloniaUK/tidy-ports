@@ -1,0 +1,54 @@
+# Mac OS X Finder and whatnot
+.DS_Store
+
+
+# Sparkle distribution Private Key (Don't check me in!)
+dsa_priv.pem
+
+
+# Xcode (and ancestors) per-user config (very noisy, and not relevant)
+*.mode1
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspective
+!default.perspectivev
+*.perspectivev3
+!default.perspectivev3
+*.pbxuser
+!default.pbxuser
+*.xcworkspace
+!default.xcworkspace
+xcuserdata
+
+# Dashcode (and ancestors) per-user config (very noisy, and not relevant)
+*.wdgtuser
+
+# Generated files
+VersionX-revision.h
+
+
+# build products
+build/
+*.[oa]
+
+# Other source repository archive directories (protects when importing)
+.hg
+.svn
+.bzr
+CVS
+
+
+# automatic backup files
+*~.nib
+*.swp
+*~
+*(Autosaved).rtfd/
+Backup[ ]of[ ]*.pages/
+Backup[ ]of[ ]*.key/
+Backup[ ]of[ ]*.numbers/
+
+# exclude template working repo and bare repo
+TemplateRepoWorking
+TemplateRepo.git
