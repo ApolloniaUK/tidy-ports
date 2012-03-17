@@ -1,0 +1,119 @@
+#!/bin/sh
+#
+#	tidy-ports
+#
+#	Remove the inactive ports from the current MacPorts installation
+#	
+#   © 2012 Alan Staniforth
+#
+#	Version 1.0
+#
+#	Invoke thus:
+#
+#	./tidy-ports	[-h|-v]
+#
+
+# Version
+TIDY_VERS=1.0
+
+### Set up.
+# Set trap to allow abort on signal: 
+trap 'echo "Interrupted by signal" >&2; exit' 1 2 3 15
+
+### Constants
+
+### Variables
+
+### Process the options if any
+
+if test $# -ne 0 ; then
+	### Options
+	while test $# -gt 0;
+	do
+		### Get the option flag and switch on that basis
+		case "$1" in
+			-*) FLAG="$1" 
+				case "$FLAG" in
+					-h) 
+						### Usage information
+						echo "Usage: ./tidy-ports [NUM_BEEPS]"
+						echo "Usage: ./tidy-ports -h"
+						echo "Usage: ./tidy-ports -v"
+						echo ""
+						echo "Options:"
+						echo "    -h        Print this usage summary."
+						echo "    -v        Print tool version."
+						echo ""
+						echo "Description:"
+						echo "    Remove the inactive ports from the current MacPorts installation"
+						echo ""
+						NOBUILD=true
+						break
+					;;
+					-v) 
+						### version
+						echo "$TIDY_VERS"
+						NOBUILD=true
+						break
+					;;
+					-*) echo "Usage: "$1" not understood!"
+						echo "Use sw-bind -h for usage information"
+						NOBUILD=true
+						break
+					;;
+				esac
+			;;
+			*) 
+				BEEP_NUMBER="$1"
+				if ! [ "$BEEP_NUMBER" -gt "0" ] ; then
+					echo "Usage: "$1" not understood! Any parameter must be a number."
+					echo "Use beep -h for usage information"
+					NOBUILD=true
+				fi
+				break
+			;;
+		esac
+		shift
+	done
+fi
+
+### Bale out if bad option or not called to build, just for info
+
+if test $NOBUILD ; then
+	exit
+fi
+
+### Actual functionality implemented here.
+
+	## get a list of the targets in the current node
+	portlist="`port installed`"
+
+	## iterate through each target, modifying the index file
+	echo "${portlist}" |
+ 	while read target
+ 	do
+ 		echo "${target}"
+ 		## get the target identifier
+		#target="${target#Target[}"
+		#target="${target%%]*}"
+		
+		## get the node name
+		#nodename="${target%%_*}"
+		
+		## get the interface number
+		#intfnum="${target#*_}"
+		
+		## add the links to the year total graph pages
+		#for totalgraphpage in `ls "${workdir}" | grep "${target}.total.[0-9][0-9][0-9][0-9].html" | sort -b -r`
+		#do
+			## get the year of this page
+		#	year="${totalgraphpage#*total.}"
+		#	year=${year%%.html}
+		#	cat "${workdir}"/index.html | sed 's/SRC="'${target}'-day.'${pic}'"><\/A><BR>/SRC="'${target}'-day.'${pic}'"><\/A><BR>\
+#<p>\
+#<DIV>Click <A HREF="'${totalgraphpage}'">'${year}'<\/A> to view throughput totals for the year<BR>/g' > "${workdir}"/index-munged.html
+
+			## copy the munged file to 
+		#	mv -f "${workdir}"/index-munged.html "${workdir}"/index.html
+		#done
+	done
