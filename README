@@ -1,5 +1,5 @@
 Version 1.0, tidy-ports
-This is the implementation of tidy-ports, the Mac OS X shell tool 
+This is the implementation of tidy-ports, a Mac OS X shell tool 
 to tidy a MacPorts port installation.
 
 This code is (c) 2012 by Alan Staniforth
