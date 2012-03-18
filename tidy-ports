@@ -151,8 +151,8 @@ if [[ $inactive_port_count -gt 0 ]] ; then
 			let "part_count += 1"
 		done
 		
-		echo "sudo port uninstall ${cli[1]} ${cli[2]}"
-		echo "sudo port clean ${cli[1]} ${cli[2]}"
+		echo "sudo port -f uninstall  ${cli[1]} ${cli[2]}"
+		echo "sudo port clean --logs --work ${cli[1]}"
 		
  		let "inactive_port_index += 1"
 	done
