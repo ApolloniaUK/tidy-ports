@@ -10,7 +10,7 @@
 #
 #	Invoke thus:
 #
-#	./tidy-ports	[-h|-v]
+#	./tidy-ports	[-h|-v] | [PORT_NAME PORT_VERSION] ...
 #
 
 # Version
@@ -41,7 +41,7 @@ if test $# -ne 0 ; then
 				case "$FLAG" in
 					-h) 
 						### Usage information
-						echo "Usage: ./tidy-ports [NUM_BEEPS]"
+						echo "Usage: ./tidy-ports [PORT_NAME PORT_VERSION] ..."
 						echo "Usage: ./tidy-ports -h"
 						echo "Usage: ./tidy-ports -v"
 						echo ""
@@ -50,7 +50,13 @@ if test $# -ne 0 ; then
 						echo "    -v        Print tool version."
 						echo ""
 						echo "Description:"
-						echo "    Remove the inactive ports from the current MacPorts installation"
+						echo "    Remove inactive ports from the current MacPorts installation."
+						echo "    The script will scan the installed ports list for inactive ones"
+						echo "    and then uninstalls them."
+						echo ""
+						echo "    Alternatively you can specify one or more ports to uninstall on"
+						echo "    the command line. You must give both the port name and its "
+						echo "    identifying version string (always begins with an '@' symbol."
 						echo ""
 						NO_EXEC=true
 						break
