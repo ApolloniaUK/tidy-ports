@@ -141,6 +141,12 @@ if [[ $NO_EXEC -eq 0 ]] ; then
 	exit
 fi
 
+### Check for superuser authority if required
+if [[ "$USER" != "root"  && $LIST_ONLY -eq 1 ]] ; then
+	my_echo "Error - When uninstalling you must invoke the script with \"sudo\"." 0
+	exit
+fi
+
 ### Actual functionality implemented here.
 
 # If no port has been specified on the command line then we need to scan the installed port list
