@@ -25,6 +25,7 @@ trap 'echo "Interrupted by signal" >&2; exit' 1 2 3 15
 ### Variables
 NO_EXEC=1 							# flag to control whether to exit after parsing options/params
 CLI_PORT=1							# flag if a port was specified on the command line
+LIST_ONLY=1							# flag if should only list inactive ports
 declare -a inactive_port_list 		# declare an array - not strictly necessary
 inactive_port_count=0				# count of entries in the array
 
@@ -43,10 +44,12 @@ if test $# -ne 0 ; then
 						### Usage information
 						echo "Usage: ./tidy-ports [PORT_NAME PORT_VERSION] ..."
 						echo "Usage: ./tidy-ports -h"
+						echo "Usage: ./tidy-ports -l"
 						echo "Usage: ./tidy-ports -v"
 						echo ""
 						echo "Options:"
 						echo "    -h        Print this usage summary."
+						echo "    -l        List the inactive ports, don't uninstall them."
 						echo "    -v        Print tool version."
 						echo ""
 						echo "Description:"
@@ -59,6 +62,12 @@ if test $# -ne 0 ; then
 						echo "    identifying version string (always begins with an '@' symbol."
 						echo ""
 						NO_EXEC=true
+						break
+					;;
+					-l) 
+						### list only
+						LIST_ONLY=0
+						echo "==> Listing inactive ports..."
 						break
 					;;
 					-v) 
@@ -186,17 +195,25 @@ if [[ $inactive_port_count -gt 0 ]] ; then
  	inactive_port_index=0
 	while [ $inactive_port_index -lt $inactive_port_count ]
 	do
-		echo "==> Uninstalling: ${inactive_port_list[$inactive_port_index]}"
- 		part_count=1
- 		for part_info in "${inactive_port_list[$inactive_port_index]}"
-		do
-			cli[$part_count]="${part_info}"
-			let "part_count += 1"
-		done
-		
-		echo "sudo port -f uninstall  ${cli[1]} ${cli[2]}"
-		echo "sudo port clean --logs --work ${cli[1]}"
-		
+		# check we aren't listing only
+		if [[ $LIST_ONLY -eq 1 ]] ; then
+			echo "==> Uninstalling: ${inactive_port_list[$inactive_port_index]}"
+			part_count=1
+			for part_info in "${inactive_port_list[$inactive_port_index]}"
+			do
+				cli[$part_count]="${part_info}"
+				let "part_count += 1"
+			done
+			
+			echo "sudo port -f uninstall  ${cli[1]} ${cli[2]}"
+			echo "sudo port clean --logs --work ${cli[1]}"
+		else
+			# we are only listing the inactive ports
+			if [[ $CLI_PORT -eq 1 ]] ; then
+				# point in doing this if operating on ports specified on the CLI
+				echo "    ${inactive_port_list[$inactive_port_index]}"
+			fi
+		fi
  		let "inactive_port_index += 1"
 	done
 else
