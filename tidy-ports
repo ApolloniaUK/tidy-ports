@@ -180,13 +180,11 @@ if [[ ${#inactive_port_list[*]} -eq 0 ]] ; then
 			# if the port info lengths don't differ, then no " (active)" was striped. Therefore
 			# this is an inactive port, so add its info to the inactive ports list.
 			if [[ pi_len -eq pi_stripped_len ]] ; then
-				my_echo "${port_info} (inactive)" 1
-				my_echo "inactive_port_count is: ${inactive_port_count}" 1
 				inactive_port_list[$inactive_port_count]="${port_info}"
-				my_echo "inactive_port_list[${inactive_port_count}] is: ${inactive_port_list[$inactive_port_count]}" 1
+				my_echo "Added ${port_info} to inactive ports list..." 1
 				let "inactive_port_count += 1"
 			else
-				my_echo "${port_info}" 1
+				my_echo "The port ${port_info_stripped} is active, skipped..." 1
 			fi
 		fi
 		# now we have skipped the junk first line, clear $skip_first_line
