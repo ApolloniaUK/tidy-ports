@@ -23,6 +23,7 @@ trap 'echo "Interrupted by signal" >&2; exit' 1 2 3 15
 ### Constants
 
 ### Variables
+NO_EXEC=1 			# flag to control whether to exit after parsing options/params
 
 ### Process the options if any
 
@@ -47,18 +48,18 @@ if test $# -ne 0 ; then
 						echo "Description:"
 						echo "    Remove the inactive ports from the current MacPorts installation"
 						echo ""
-						NOBUILD=true
+						NO_EXEC=true
 						break
 					;;
 					-v) 
 						### version
 						echo "$TIDY_VERS"
-						NOBUILD=true
+						NO_EXEC=true
 						break
 					;;
 					-*) echo "Usage: "$1" not understood!"
 						echo "Use sw-bind -h for usage information"
-						NOBUILD=true
+						NO_EXEC=true
 						break
 					;;
 				esac
@@ -68,7 +69,7 @@ if test $# -ne 0 ; then
 				if ! [ "$BEEP_NUMBER" -gt "0" ] ; then
 					echo "Usage: "$1" not understood! Any parameter must be a number."
 					echo "Use beep -h for usage information"
-					NOBUILD=true
+					NO_EXEC=true
 				fi
 				break
 			;;
@@ -79,7 +80,7 @@ fi
 
 ### Bale out if bad option or not called to build, just for info
 
-if test $NOBUILD ; then
+if [[ $NO_EXEC -eq 0 ]] ; then
 	exit
 fi
 
