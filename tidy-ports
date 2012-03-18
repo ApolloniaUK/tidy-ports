@@ -114,10 +114,14 @@ inactive_port_count=0				# count of entries in the array
 ### Iterate through each port, adding it to an array if it is found to be inactive
 while read port_info
 do
+	# get the port info, stripping the " (active)" from the end of an active port.
 	port_info_stripped="${port_info%% (active)}"
+	# get the lengths of the stripped and unstripped port info
 	pi_len=`expr "$port_info" : '.*'`
 	pi_stripped_len=`expr "$port_info_stripped" : '.*'`
 	
+	# if the port info lengths don't differ, then no " (active)" was striped. Therefore
+	# this is an inactive port, so add its info to the inactive ports list.
 	if [[ pi_len -eq pi_stripped_len ]] ; then
 		echo "${port_info} (inactive)"
 		echo "inactive_port_count is: ${inactive_port_count}"
@@ -152,12 +156,11 @@ done <<< "$portlist"
 # rm /tmp/${UID}/installed.txt
 
 if [[ $inactive_port_count -gt 0 ]] ; then
-	echo ${#inactive_port_list[*]}
-	echo ${#inactive_port_list[@]}
+	echo "==> ${#inactive_port_list[*]} inactive ports found"
  	inactive_port_index=0
 	while [ $inactive_port_index -lt $inactive_port_count ]
 	do
-		echo "inactive_port is: ${inactive_port_list[$inactive_port_index]}"
+		echo "==> Uninstalling: ${inactive_port_list[$inactive_port_index]}"
  		part_count=1
  		for part_info in "${inactive_port_list[$inactive_port_index]}"
 		do
@@ -170,4 +173,6 @@ if [[ $inactive_port_count -gt 0 ]] ; then
 		
  		let "inactive_port_index += 1"
 	done
+else
+	echo "==> No inactive ports found."
 fi
