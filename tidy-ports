@@ -108,7 +108,7 @@ if test $# -ne 0 ; then
 				shift
 				PORT_VERSION="$1"
 				# add the port info the inactive port list 
-				port_info="${PORT_NAME}"+"${PORT_NAME}"
+				port_info="${PORT_NAME} ${PORT_NAME}"
 				inactive_port_list[$inactive_port_count]="${port_info}"
 				let "inactive_port_count += 1"
 				CLI_PORT=true
