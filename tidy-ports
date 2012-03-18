@@ -24,11 +24,24 @@ trap 'echo "Interrupted by signal" >&2; exit' 1 2 3 15
 
 ### Variables
 NO_EXEC=1 							# flag to control whether to exit after parsing options/params
-CLI_PORT=1							# flag if a port was specified on the command line
-LIST_ONLY=1							# flag if should only list inactive ports
+CLI_PORT=1							# flag if a port was specified on the command line; 1 = no, true = yes
+LIST_ONLY=1							# flag if should only list inactive ports; 1 = no, 0 = yes
+VERBOSE=1							# flag if verbose output required; 1 = no, 0 = yes
 declare -a inactive_port_list 		# declare an array - not strictly necessary
 inactive_port_count=0				# count of entries in the array
 
+
+function my_echo () {
+	# print message to standard out, but, if not in verbose mode, only do so if 
+	# $2 is 0
+	if [[ $VERBOSE -eq 1 ]] ; then
+		if [[ $2 -eq 0 ]] ; then
+			echo "==> $1"
+		fi
+	else
+		echo "==> $1"
+	fi
+}
 
 ### Process the options if any
 
@@ -40,14 +53,21 @@ if test $# -ne 0 ; then
 		case "$1" in
 			-*) FLAG="$1" 
 				case "$FLAG" in
+					-d) 
+						### verbose output
+						VERBOSE=0
+						my_echo "verbose messages enabled..." 1
+						break
+					;;
 					-h) 
 						### Usage information
-						echo "Usage: ./tidy-ports [PORT_NAME PORT_VERSION] ..."
+						echo "Usage: ./tidy-ports [-d] [PORT_NAME PORT_VERSION] ..."
+						echo "Usage: ./tidy-ports [-d] [-l]"
 						echo "Usage: ./tidy-ports -h"
-						echo "Usage: ./tidy-ports -l"
 						echo "Usage: ./tidy-ports -v"
 						echo ""
 						echo "Options:"
+						echo "    -d        Verbose output."
 						echo "    -h        Print this usage summary."
 						echo "    -l        List the inactive ports, don't uninstall them."
 						echo "    -v        Print tool version."
@@ -67,7 +87,6 @@ if test $# -ne 0 ; then
 					-l) 
 						### list only
 						LIST_ONLY=0
-						echo "==> Listing inactive ports..."
 						break
 					;;
 					-v) 
@@ -154,13 +173,13 @@ if [[ ${#inactive_port_list[*]} -eq 0 ]] ; then
 		# if the port info lengths don't differ, then no " (active)" was striped. Therefore
 		# this is an inactive port, so add its info to the inactive ports list.
 		if [[ pi_len -eq pi_stripped_len ]] ; then
-			echo "${port_info} (inactive)"
-			echo "inactive_port_count is: ${inactive_port_count}"
+			my_echo "${port_info} (inactive)" 1
+			my_echo "inactive_port_count is: ${inactive_port_count}" 1
 			inactive_port_list[$inactive_port_count]="${port_info}"
-			echo "inactive_port_list[${inactive_port_count}] is: ${inactive_port_list[$inactive_port_count]}"
+			my_echo "inactive_port_list[${inactive_port_count}] is: ${inactive_port_list[$inactive_port_count]}" 1
 			let "inactive_port_count += 1"
 		else
-			echo "${port_info}"
+			my_echo "${port_info}" 1
 		fi
 	done <<< "$portlist"
 	
@@ -190,8 +209,17 @@ fi # ${#inactive_port_list[*] -eq 0
 
 if [[ $inactive_port_count -gt 0 ]] ; then
 	if [[ $CLI_PORT -eq 1 ]] ; then
-		echo "==> ${#inactive_port_list[*]} inactive ports found"
+		# not a command line specified list, so show how many detected
+		my_echo "${#inactive_port_list[*]} inactive ports found" 0
+		
+		# indicate if only listing
+		if [[ $LIST_ONLY -eq 0 ]] ; then
+			my_echo "Listing inactive ports..." 0
+		fi
 	fi
+	
+	
+	# list/uninstall the inactive ports
  	inactive_port_index=0
 	while [ $inactive_port_index -lt $inactive_port_count ]
 	do
@@ -217,5 +245,5 @@ if [[ $inactive_port_count -gt 0 ]] ; then
  		let "inactive_port_index += 1"
 	done
 else
-	echo "==> No inactive ports found."
+	my_echo "No inactive ports found." 0
 fi
