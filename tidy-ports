@@ -10,7 +10,7 @@
 #
 #	Invoke thus:
 #
-#	./tidy-ports	[-h|-v] | [PORT_NAME PORT_VERSION] ...
+#	./tidy-ports	[-h|-v] | [-d] [-l] [-q] [PORT_NAME PORT_VERSION] ...
 #
 
 # Version
@@ -27,6 +27,7 @@ NO_EXEC=1 							# flag to control whether to exit after parsing options/params
 CLI_PORT=1							# flag if a port was specified on the command line; 1 = no, true = yes
 LIST_ONLY=1							# flag if should only list inactive ports; 1 = no, 0 = yes
 VERBOSE=1							# flag if verbose output required; 1 = no, 0 = yes
+CONFIRM=0							# flag if should confirm uninstalls; 1 = no, 0 = yes
 declare -a inactive_port_list 		# declare an array - not strictly necessary
 inactive_port_count=0				# count of entries in the array
 
@@ -60,8 +61,8 @@ if test $# -ne 0 ; then
 					;;
 					-h) 
 						### Usage information
-						echo "Usage: ./tidy-ports [-d] [PORT_NAME PORT_VERSION] ..."
-						echo "Usage: ./tidy-ports [-d] [-l]"
+						echo "Usage: ./tidy-ports [-d] [-l] [-q] [PORT_NAME PORT_VERSION] ..."
+						echo "Usage: ./tidy-ports [-d] [-l] [-q]"
 						echo "Usage: ./tidy-ports -h"
 						echo "Usage: ./tidy-ports -v"
 						echo ""
@@ -69,23 +70,31 @@ if test $# -ne 0 ; then
 						echo "    -d        Verbose output."
 						echo "    -h        Print this usage summary."
 						echo "    -l        List the inactive ports, don't uninstall them."
+						echo "    -q        Quiet - script won't ask for confirmation before uninstalling."
 						echo "    -v        Print tool version."
 						echo ""
 						echo "Description:"
 						echo "    Remove inactive ports from the current MacPorts installation."
 						echo "    The script will scan the installed ports list for inactive ones"
-						echo "    and then uninstalls them."
+						echo "    and then uninstall them."
 						echo ""
 						echo "    Alternatively you can specify one or more ports to uninstall on"
 						echo "    the command line. You must give both the port name and its "
 						echo "    identifying version string (always begins with an '@' symbol."
 						echo ""
+						echo "    Unless overridden with the -q option the script will prompt for"
+						echo "    confirmation of each uninstall."
+						echo ""
 						NO_EXEC=true
 						break
 					;;
 					-l) 
+						### don't confirm uninstalls
+						CONFIRM=1
+					;;
+					-q) 
 						### list only
-						LIST_ONLY=0
+						CONFIRM=1
 					;;
 					-v) 
 						### version
@@ -232,20 +241,28 @@ if [[ $inactive_port_count -gt 0 ]] ; then
 	
 	# list/uninstall the inactive ports
  	inactive_port_index=0
+ 	confirm_response=""
 	while [ $inactive_port_index -lt $inactive_port_count ]
 	do
 		# check we aren't listing only
 		if [[ $LIST_ONLY -eq 1 ]] ; then
-			echo "==> Uninstalling: ${inactive_port_list[$inactive_port_index]}"
-			part_count=1
-			for part_info in "${inactive_port_list[$inactive_port_index]}"
-			do
-				cli[$part_count]="${part_info}"
-				let "part_count += 1"
-			done
-			
-			echo "sudo port -f uninstall  ${cli[1]} ${cli[2]}"
-			echo "sudo port clean --logs --work ${cli[1]}"
+			# interractive check
+			if [[ $CONFIRM -eq 0 && $confirm_response != "N" && $confirm_response != "A" ]] ; then
+				read -n 1 -p "Uninstall ${inactive_port_list[$inactive_port_index]}? [y]es, [n]o, [A]ll, [N]one: " confirm_response
+				echo "" # chuck in a newline or things look messy
+			fi
+			if [[ $CONFIRM -eq 1 || $confirm_response == "y" || $confirm_response == "Y" || $confirm_response == "A" ]] ; then 
+				echo "==> Uninstalling: ${inactive_port_list[$inactive_port_index]}"
+				part_count=1
+				for part_info in "${inactive_port_list[$inactive_port_index]}"
+				do
+					cli[$part_count]="${part_info}"
+					let "part_count += 1"
+				done
+				
+				echo "sudo port -f uninstall  ${cli[1]} ${cli[2]}"
+				echo "sudo port clean --logs --work ${cli[1]}"
+			fi
 		else
 			# we are only listing the inactive ports
 			if [[ $CLI_PORT -eq 1 || VERBOSE -eq 0 ]] ; then
