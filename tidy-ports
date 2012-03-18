@@ -85,35 +85,75 @@ fi
 
 ### Actual functionality implemented here.
 
-	## get a list of the targets in the current node
-	portlist="`port installed`"
+## get a list of the currently installed ports, both active and deactivated.
+portlist="`port installed`"
 
-	## iterate through each target, modifying the index file
-	echo "${portlist}" |
- 	while read target
- 	do
- 		echo "${target}"
- 		## get the target identifier
-		#target="${target#Target[}"
-		#target="${target%%]*}"
-		
-		## get the node name
-		#nodename="${target%%_*}"
-		
-		## get the interface number
-		#intfnum="${target#*_}"
-		
-		## add the links to the year total graph pages
-		#for totalgraphpage in `ls "${workdir}" | grep "${target}.total.[0-9][0-9][0-9][0-9].html" | sort -b -r`
-		#do
-			## get the year of this page
-		#	year="${totalgraphpage#*total.}"
-		#	year=${year%%.html}
-		#	cat "${workdir}"/index.html | sed 's/SRC="'${target}'-day.'${pic}'"><\/A><BR>/SRC="'${target}'-day.'${pic}'"><\/A><BR>\
-#<p>\
-#<DIV>Click <A HREF="'${totalgraphpage}'">'${year}'<\/A> to view throughput totals for the year<BR>/g' > "${workdir}"/index-munged.html
+## iterate through each port, adding it to an array if it is found to be inactive
+declare -a inactive_port_list
+inactive_port_count=0
 
-			## copy the munged file to 
-		#	mv -f "${workdir}"/index-munged.html "${workdir}"/index.html
-		#done
+# echo "${portlist}" |
+# while read port_info
+# do
+# 	...
+# done
+
+while read port_info
+do
+	port_info_stripped="${port_info%% (active)}"
+	pi_len=`expr "$port_info" : '.*'`
+	pi_stripped_len=`expr "$port_info_stripped" : '.*'`
+	
+	if [[ pi_len -eq pi_stripped_len ]] ; then
+		echo "${port_info} (inactive)"
+		echo "inactive_port_count is: ${inactive_port_count}"
+		inactive_port_list[$inactive_port_count]="${port_info}"
+		echo "inactive_port_list[${inactive_port_count}] is: ${inactive_port_list[$inactive_port_count]}"
+		let "inactive_port_count += 1"
+	else
+		echo "${port_info}"
+	fi
+done <<< "$portlist"
+
+### Alternate form of loop to deal with problem of a pipe creating a subshell
+# echo "${portlist}" > "/tmp/${UID}/installed.txt"
+# exec 3<> /tmp/${UID}/installed.txt
+# while read port_info <&3
+# do
+#  	port_info_stripped="${port_info%% (active)}"
+#  	pi_len=`expr "$port_info" : '.*'`
+#  	pi_stripped_len=`expr "$port_info_stripped" : '.*'`
+#  	
+#  	if [[ pi_len -eq pi_stripped_len ]] ; then
+#  		echo "${port_info} (inactive)"
+#  		echo "inactive_port_count is: ${inactive_port_count}"
+#  		inactive_port_list[$inactive_port_count]="${port_info}"
+#  		echo "inactive_port_list[${inactive_port_count}] is: ${inactive_port_list[$inactive_port_count]}"
+#  		let "inactive_port_count += 1"
+#  	else
+#  		echo "${port_info}"
+#  	fi
+# done
+# exec 3>&-
+# rm /tmp/${UID}/installed.txt
+
+if [[ $inactive_port_count -gt 0 ]] ; then
+	echo ${#inactive_port_list[*]}
+	echo ${#inactive_port_list[@]}
+ 	inactive_port_index=0
+	while [ $inactive_port_index -lt $inactive_port_count ]
+	do
+		echo "inactive_port is: ${inactive_port_list[$inactive_port_index]}"
+ 		part_count=1
+ 		for part_info in "${inactive_port_list[$inactive_port_index]}"
+		do
+			cli[$part_count]="${part_info}"
+			let "part_count += 1"
+		done
+		
+		echo "sudo port uninstall ${cli[1]} ${cli[2]}"
+		echo "sudo port clean ${cli[1]} ${cli[2]}"
+		
+ 		let "inactive_port_index += 1"
 	done
+fi
