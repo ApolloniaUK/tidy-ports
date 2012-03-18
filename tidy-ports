@@ -85,19 +85,32 @@ fi
 
 ### Actual functionality implemented here.
 
-## get a list of the currently installed ports, both active and deactivated.
+### get a list of the currently installed ports, both active and deactivated.
 portlist="`port installed`"
 
-## iterate through each port, adding it to an array if it is found to be inactive
-declare -a inactive_port_list
-inactive_port_count=0
+### declare variables
+declare -a inactive_port_list 		# declare an array - not strictly necessary
+inactive_port_count=0				# count of entries in the array
 
+### What follows wa originally written like this:
+# 
 # echo "${portlist}" |
 # while read port_info
 # do
 # 	...
 # done
-
+# 
+# Unfortunately there is a problem with this. Processes put together with a pipe are 
+# executed in subshells (and therefore have their own environment). Whatever happens 
+# within the while does not affect anything outside of the pipe. So the variables 
+# manipulated within the while are purely local to that subshell environmant and the
+# same named variables in the script are not affected
+# 
+# Below are two ways to fix this. I have kept both for the sake of future reference 
+# with one commented out. I chose the active one because it is slightly neater and 
+# I don't like creating temporary files if I can avoid it. Both work well though.
+# 
+### Iterate through each port, adding it to an array if it is found to be inactive
 while read port_info
 do
 	port_info_stripped="${port_info%% (active)}"
