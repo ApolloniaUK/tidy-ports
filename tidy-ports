@@ -140,6 +140,7 @@ if [[ ${#inactive_port_list[*]} -eq 0 ]] ; then
 	
 	### get a list of the currently installed ports, both active and deactivated.
 	portlist="`port installed`"
+	skip_first_line=1
 	
 	### What follows was originally written like this:
 	# 
@@ -160,25 +161,36 @@ if [[ ${#inactive_port_list[*]} -eq 0 ]] ; then
 	# I don't like creating temporary files if I can avoid it. Both work well though.
 	# 
 	### Iterate through each port, adding it to an array if it is found to be inactive
+	
 	while read port_info
 	do
-		# get the port info, stripping the " (active)" from the end of an active port.
-		port_info_stripped="${port_info%% (active)}"
-		# get the lengths of the stripped and unstripped port info
-		pi_len=`expr "$port_info" : '.*'`
-		pi_stripped_len=`expr "$port_info_stripped" : '.*'`
-		
-		# if the port info lengths don't differ, then no " (active)" was striped. Therefore
-		# this is an inactive port, so add its info to the inactive ports list.
-		if [[ pi_len -eq pi_stripped_len ]] ; then
-			my_echo "${port_info} (inactive)" 1
-			my_echo "inactive_port_count is: ${inactive_port_count}" 1
-			inactive_port_list[$inactive_port_count]="${port_info}"
-			my_echo "inactive_port_list[${inactive_port_count}] is: ${inactive_port_list[$inactive_port_count]}" 1
-			let "inactive_port_count += 1"
-		else
-			my_echo "${port_info}" 1
+		# Before listing the installed ports, port writes out the line:
+		# 
+		#   The following ports are currently installed:
+		# 
+		# Obviously we don't want this in the inactive ports list so we need to discard
+		# the first line from $portlist
+		if [[ $skip_first_line -ne 1 ]] ; then
+			# get the port info, stripping the " (active)" from the end of an active port.
+			port_info_stripped="${port_info%% (active)}"
+			# get the lengths of the stripped and unstripped port info
+			pi_len=`expr "$port_info" : '.*'`
+			pi_stripped_len=`expr "$port_info_stripped" : '.*'`
+			
+			# if the port info lengths don't differ, then no " (active)" was striped. Therefore
+			# this is an inactive port, so add its info to the inactive ports list.
+			if [[ pi_len -eq pi_stripped_len ]] ; then
+				my_echo "${port_info} (inactive)" 1
+				my_echo "inactive_port_count is: ${inactive_port_count}" 1
+				inactive_port_list[$inactive_port_count]="${port_info}"
+				my_echo "inactive_port_list[${inactive_port_count}] is: ${inactive_port_list[$inactive_port_count]}" 1
+				let "inactive_port_count += 1"
+			else
+				my_echo "${port_info}" 1
+			fi
 		fi
+		# now we have skipped the junk first line, clear $skip_first_line
+		skip_first_line=0
 	done <<< "$portlist"
 	
 	### Alternate form of loop to deal with problem of a pipe creating a subshell
