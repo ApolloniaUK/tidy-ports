@@ -23,7 +23,11 @@ trap 'echo "Interrupted by signal" >&2; exit' 1 2 3 15
 ### Constants
 
 ### Variables
-NO_EXEC=1 			# flag to control whether to exit after parsing options/params
+NO_EXEC=1 							# flag to control whether to exit after parsing options/params
+CLI_PORT=1							# flag if a port was specified on the command line
+declare -a inactive_port_list 		# declare an array - not strictly necessary
+inactive_port_count=0				# count of entries in the array
+
 
 ### Process the options if any
 
@@ -65,9 +69,21 @@ if test $# -ne 0 ; then
 				esac
 			;;
 			*) 
-				BEEP_NUMBER="$1"
-				if ! [ "$BEEP_NUMBER" -gt "0" ] ; then
-					echo "Usage: "$1" not understood! Any parameter must be a number."
+				### looks like a port specified on the command line
+				# get the port name
+				PORT_NAME="$1"
+				# get the port version
+				shift
+				PORT_VERSION="$1"
+				# add the port info the inactive port list 
+				port_info="${PORT_NAME}"+"${PORT_NAME}"
+				inactive_port_list[$inactive_port_count]="${port_info}"
+				let "inactive_port_count += 1"
+				CLI_PORT=true
+				# Check if no version info was specified. Hopefully this will also trap a few
+				# other errors
+				if [[ "${PORT_VERSION}" = "" ]] ; then
+					echo "Usage: When specifying a port for removal you must also specify a version string."
 					echo "Use beep -h for usage information"
 					NO_EXEC=true
 				fi
@@ -86,77 +102,81 @@ fi
 
 ### Actual functionality implemented here.
 
-### get a list of the currently installed ports, both active and deactivated.
-portlist="`port installed`"
-
-### declare variables
-declare -a inactive_port_list 		# declare an array - not strictly necessary
-inactive_port_count=0				# count of entries in the array
-
-### What follows wa originally written like this:
-# 
-# echo "${portlist}" |
-# while read port_info
-# do
-# 	...
-# done
-# 
-# Unfortunately there is a problem with this. Processes put together with a pipe are 
-# executed in subshells (and therefore have their own environment). Whatever happens 
-# within the while does not affect anything outside of the pipe. So the variables 
-# manipulated within the while are purely local to that subshell environmant and the
-# same named variables in the script are not affected
-# 
-# Below are two ways to fix this. I have kept both for the sake of future reference 
-# with one commented out. I chose the active one because it is slightly neater and 
-# I don't like creating temporary files if I can avoid it. Both work well though.
-# 
-### Iterate through each port, adding it to an array if it is found to be inactive
-while read port_info
-do
-	# get the port info, stripping the " (active)" from the end of an active port.
-	port_info_stripped="${port_info%% (active)}"
-	# get the lengths of the stripped and unstripped port info
-	pi_len=`expr "$port_info" : '.*'`
-	pi_stripped_len=`expr "$port_info_stripped" : '.*'`
+# If no port has been specified on the command line then we need to scan the installed port list
+if [[ ${#inactive_port_list[*]} -eq 0 ]] ; then
+	echo "==> Scanning for inactive ports..."
 	
-	# if the port info lengths don't differ, then no " (active)" was striped. Therefore
-	# this is an inactive port, so add its info to the inactive ports list.
-	if [[ pi_len -eq pi_stripped_len ]] ; then
-		echo "${port_info} (inactive)"
-		echo "inactive_port_count is: ${inactive_port_count}"
-		inactive_port_list[$inactive_port_count]="${port_info}"
-		echo "inactive_port_list[${inactive_port_count}] is: ${inactive_port_list[$inactive_port_count]}"
-		let "inactive_port_count += 1"
-	else
-		echo "${port_info}"
-	fi
-done <<< "$portlist"
-
-### Alternate form of loop to deal with problem of a pipe creating a subshell
-# echo "${portlist}" > "/tmp/${UID}/installed.txt"
-# exec 3<> /tmp/${UID}/installed.txt
-# while read port_info <&3
-# do
-#  	port_info_stripped="${port_info%% (active)}"
-#  	pi_len=`expr "$port_info" : '.*'`
-#  	pi_stripped_len=`expr "$port_info_stripped" : '.*'`
-#  	
-#  	if [[ pi_len -eq pi_stripped_len ]] ; then
-#  		echo "${port_info} (inactive)"
-#  		echo "inactive_port_count is: ${inactive_port_count}"
-#  		inactive_port_list[$inactive_port_count]="${port_info}"
-#  		echo "inactive_port_list[${inactive_port_count}] is: ${inactive_port_list[$inactive_port_count]}"
-#  		let "inactive_port_count += 1"
-#  	else
-#  		echo "${port_info}"
-#  	fi
-# done
-# exec 3>&-
-# rm /tmp/${UID}/installed.txt
+	### get a list of the currently installed ports, both active and deactivated.
+	portlist="`port installed`"
+	
+	### What follows was originally written like this:
+	# 
+	# echo "${portlist}" |
+	# while read port_info
+	# do
+	# 	...
+	# done
+	# 
+	# Unfortunately there is a problem with this. Processes put together with a pipe are 
+	# executed in subshells (and therefore have their own environment). Whatever happens 
+	# within the while does not affect anything outside of the pipe. So the variables 
+	# manipulated within the while are purely local to that subshell environmant and the
+	# same named variables in the script are not affected
+	# 
+	# Below are two ways to fix this. I have kept both for the sake of future reference 
+	# with one commented out. I chose the active one because it is slightly neater and 
+	# I don't like creating temporary files if I can avoid it. Both work well though.
+	# 
+	### Iterate through each port, adding it to an array if it is found to be inactive
+	while read port_info
+	do
+		# get the port info, stripping the " (active)" from the end of an active port.
+		port_info_stripped="${port_info%% (active)}"
+		# get the lengths of the stripped and unstripped port info
+		pi_len=`expr "$port_info" : '.*'`
+		pi_stripped_len=`expr "$port_info_stripped" : '.*'`
+		
+		# if the port info lengths don't differ, then no " (active)" was striped. Therefore
+		# this is an inactive port, so add its info to the inactive ports list.
+		if [[ pi_len -eq pi_stripped_len ]] ; then
+			echo "${port_info} (inactive)"
+			echo "inactive_port_count is: ${inactive_port_count}"
+			inactive_port_list[$inactive_port_count]="${port_info}"
+			echo "inactive_port_list[${inactive_port_count}] is: ${inactive_port_list[$inactive_port_count]}"
+			let "inactive_port_count += 1"
+		else
+			echo "${port_info}"
+		fi
+	done <<< "$portlist"
+	
+	### Alternate form of loop to deal with problem of a pipe creating a subshell
+	# echo "${portlist}" > "/tmp/${UID}/installed.txt"
+	# exec 3<> /tmp/${UID}/installed.txt
+	# while read port_info <&3
+	# do
+	#  	port_info_stripped="${port_info%% (active)}"
+	#  	pi_len=`expr "$port_info" : '.*'`
+	#  	pi_stripped_len=`expr "$port_info_stripped" : '.*'`
+	#  	
+	#  	if [[ pi_len -eq pi_stripped_len ]] ; then
+	#  		echo "${port_info} (inactive)"
+	#  		echo "inactive_port_count is: ${inactive_port_count}"
+	#  		inactive_port_list[$inactive_port_count]="${port_info}"
+	#  		echo "inactive_port_list[${inactive_port_count}] is: ${inactive_port_list[$inactive_port_count]}"
+	#  		let "inactive_port_count += 1"
+	#  	else
+	#  		echo "${port_info}"
+	#  	fi
+	# done
+	# exec 3>&-
+	# rm /tmp/${UID}/installed.txt
+	
+fi # ${#inactive_port_list[*] -eq 0
 
 if [[ $inactive_port_count -gt 0 ]] ; then
-	echo "==> ${#inactive_port_list[*]} inactive ports found"
+	if [[ $CLI_PORT -eq 1 ]] ; then
+		echo "==> ${#inactive_port_list[*]} inactive ports found"
+	fi
  	inactive_port_index=0
 	while [ $inactive_port_index -lt $inactive_port_count ]
 	do
