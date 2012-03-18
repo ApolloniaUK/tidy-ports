@@ -209,13 +209,14 @@ if [[ $inactive_port_count -gt 0 ]] ; then
 	if [[ $CLI_PORT -eq 1 ]] ; then
 		# not a command line specified list, so show how many detected
 		my_echo "${#inactive_port_list[*]} inactive ports found" 0
-		
-		# indicate if only listing
-		if [[ $LIST_ONLY -eq 0 ]] ; then
+	fi
+	
+	# indicate if only listing
+	if [[ $LIST_ONLY -eq 0 ]] ; then
+		if [[ $CLI_PORT -eq 1 || VERBOSE -eq 0 ]] ; then
 			my_echo "Listing inactive ports..." 0
 		fi
 	fi
-	
 	
 	# list/uninstall the inactive ports
  	inactive_port_index=0
@@ -235,7 +236,7 @@ if [[ $inactive_port_count -gt 0 ]] ; then
 			echo "sudo port clean --logs --work ${cli[1]}"
 		else
 			# we are only listing the inactive ports
-			if [[ $CLI_PORT -eq 1 ]] ; then
+			if [[ $CLI_PORT -eq 1 || VERBOSE -eq 0 ]] ; then
 				# point in doing this if operating on ports specified on the CLI
 				echo "    ${inactive_port_list[$inactive_port_index]}"
 			fi
