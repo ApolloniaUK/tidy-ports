@@ -258,7 +258,7 @@ if [[ $inactive_port_count -gt 0 ]] ; then
 			if [[ $CONFIRM -eq 1 || $confirm_response == "y" || $confirm_response == "Y" || $confirm_response == "A" ]] ; then 
 				echo "==> Uninstalling: ${inactive_port_list[$inactive_port_index]}"
 				part_count=1
-				for part_info in "${inactive_port_list[$inactive_port_index]}"
+				for part_info in ${inactive_port_list[$inactive_port_index]}
 				do
 					cli[$part_count]="${part_info}"
 					let "part_count += 1"
